@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 interface HeaderProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
 }
 
-const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
+const Header = ({ sidebarOpen, setSidebarOpen, searchTerm, setSearchTerm }: HeaderProps) => {
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem('darkMode') === 'true' ||
     (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -57,8 +59,10 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
             <input
               className="w-full pl-10 pr-3 py-2 text-sm text-gray-700 bg-gray-100 border-0 rounded-md dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               type="text"
-              placeholder="Search for videos"
+              placeholder="Search across all directories"
               aria-label="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>

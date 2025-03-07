@@ -14,10 +14,14 @@ interface VideoWithThumbnail {
   thumbnail?: string;
 }
 
-const VideoLibrary = () => {
+interface VideoLibraryProps {
+  globalSearchTerm: string;
+  setGlobalSearchTerm: (term: string) => void;
+}
+
+const VideoLibrary = ({ globalSearchTerm, setGlobalSearchTerm }: VideoLibraryProps) => {
   const { videos, directories, selectedDirectory, refreshVideos, setSelectedVideo } = useDirectories();
   const [filteredVideos, setFilteredVideos] = useState<VideoWithThumbnail[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'date'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isLoading, setIsLoading] = useState(false);
@@ -73,17 +77,16 @@ const VideoLibrary = () => {
   const filterAndSortVideos = (videosToFilter = videos) => {
     let result = [...videosToFilter];
     
-    // Filter by directory if one is selected
-    if (selectedDirectory) {
-      result = result.filter(video => video.directory === selectedDirectory);
-    }
-    
-    // Filter by search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    // If there's a search term, search across all directories
+    // Otherwise, filter by selected directory
+    if (globalSearchTerm) {
+      const term = globalSearchTerm.toLowerCase();
       result = result.filter(video => 
         video.name.toLowerCase().includes(term)
       );
+    } else if (selectedDirectory) {
+      // Only filter by directory if no search term and a directory is selected
+      result = result.filter(video => video.directory === selectedDirectory);
     }
     
     // Sort videos
@@ -108,7 +111,7 @@ const VideoLibrary = () => {
       const updatedVideos = videos.map(video => ({ ...video, thumbnail: undefined }));
       filterAndSortVideos(updatedVideos);
     }
-  }, [selectedDirectory, searchTerm, sortBy, sortOrder]);
+  }, [selectedDirectory, globalSearchTerm, sortBy, sortOrder]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -153,16 +156,16 @@ const VideoLibrary = () => {
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
           {selectedDirectory 
             ? directories.find(d => d.path === selectedDirectory)?.name || 'Videos'
-            : 'All Videos'}
+            : globalSearchTerm ? 'Search Results' : 'All Videos'}
         </h2>
         <div className="flex items-center space-x-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search videos..."
+              placeholder="Search across all directories..."
               className="w-64 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
             />
           </div>
           <button
@@ -180,11 +183,11 @@ const VideoLibrary = () => {
           <p className="mb-4 text-lg text-gray-600 dark:text-gray-400">
             {directories.length === 0
               ? 'No directories added yet. Add a directory from the sidebar.'
-              : searchTerm
+              : globalSearchTerm
               ? 'No videos match your search.'
               : 'No videos found in this directory.'}
           </p>
-          {directories.length > 0 && !searchTerm && (
+          {directories.length > 0 && !globalSearchTerm && (
             <button
               onClick={handleRefresh}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
