@@ -1,0 +1,22 @@
+{
+  "appId": "com.socialvideomanager.app",
+  "productName": "Social Video Manager",
+  "directories": {
+    "output": "dist_electron"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*.cjs"
+  ],
+  "mac": {
+    "category": "public.app-category.video",
+    "target": ["dmg", "zip"]
+  },
+  "win": {
+    "target": ["nsis", "portable"]
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Video"
+  }
+} 
