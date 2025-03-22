@@ -308,7 +308,9 @@ function setupIpcHandlers() {
       if (code === 0) {
         // Try to read the metadata file
         try {
-          const metadataPath = path.join(outputFolder, 'viral_clips_metadata.json');
+          // Get base filename of the video being processed
+          const baseFilename = path.basename(videoPath, path.extname(videoPath));
+          const metadataPath = path.join(outputFolder, `${baseFilename}_viral_clips_metadata.json`);
           
           if (!fs.existsSync(metadataPath)) {
             throw new Error('Metadata file not found. The process might have completed in demo mode or had other issues.');
@@ -317,17 +319,16 @@ function setupIpcHandlers() {
           const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
           
           // Find all the created video files
-          const files = fs.readdirSync(outputFolder);
-          const videoFiles = files
-            .filter(file => file.startsWith('viral_clip_') && (file.endsWith('.mp4') || file.endsWith('.mov')))
+          const files = fs.readdirSync(outputFolder)
+            .filter(file => file.startsWith(`${baseFilename}_clip_`) && (file.endsWith('.mp4') || file.endsWith('.mov')))
             .map(file => path.join(outputFolder, file));
           
-          if (videoFiles.length === 0) {
+          if (files.length === 0) {
             console.warn('No video clips were found in the output directory, but the script completed successfully.');
           }
           
           resolve({
-            outputPaths: videoFiles,
+            outputPaths: files,
             metadata: metadata
           });
         } catch (err) {
@@ -335,14 +336,13 @@ function setupIpcHandlers() {
           
           // If the script completed successfully but we couldn't read the metadata,
           // we'll still return a success result with any videos we found
-          const files = fs.readdirSync(outputFolder);
-          const videoFiles = files
-            .filter(file => file.startsWith('viral_clip_') && (file.endsWith('.mp4') || file.endsWith('.mov')))
+          const files = fs.readdirSync(outputFolder)
+            .filter(file => file.startsWith(`${baseFilename}_clip_`) && (file.endsWith('.mp4') || file.endsWith('.mov')))
             .map(file => path.join(outputFolder, file));
           
-          if (videoFiles.length > 0) {
+          if (files.length > 0) {
             resolve({
-              outputPaths: videoFiles,
+              outputPaths: files,
               metadata: { warning: 'Metadata file could not be read, but videos were created successfully.' }
             });
           } else {
@@ -873,6 +873,9 @@ def analyze_transcript(transcription: Dict[str, Any]) -> List[Dict[str, Any]]:
 def create_vertical_clips(input_file: str, viral_clips: List[Dict[str, Any]], output_folder: str) -> None:
     logging.info(f"Creating vertical clips from: {input_file}")
     
+    # Get base filename without extension to use in output filenames
+    base_filename = os.path.splitext(os.path.basename(input_file))[0]
+    
     # Use mock processing in demo mode
     if DEMO_MODE:
         logging.info("Using mock clip creation (DEMO mode)")
@@ -885,8 +888,8 @@ def create_vertical_clips(input_file: str, viral_clips: List[Dict[str, Any]], ou
             for i, clip_info in enumerate(viral_clips, 1):
                 # Get the file extension from the input file
                 file_extension = os.path.splitext(input_file)[1]
-                # Create clip filenames
-                clip_output = os.path.join(output_folder, f"viral_clip_{i}{file_extension}")
+                # Create clip filenames including source video name
+                clip_output = os.path.join(output_folder, f"{base_filename}_clip_{i}{file_extension}")
                 
                 # In demo mode, we just copy the original video as a placeholder
                 # In a real scenario, we would create vertical clips with the proper timecodes
@@ -931,8 +934,8 @@ def create_vertical_clips(input_file: str, viral_clips: List[Dict[str, Any]], ou
             # Then center crop to 9:16 ratio
             vertical_segment = vertical_segment.with_effects([Crop(x_center=vertical_segment.w/2, width=1080)])
 
-            # Save individual vertical clips
-            clip_output = os.path.join(output_folder, f"viral_clip_{i}{os.path.splitext(input_file)[1]}")
+            # Save individual vertical clips with source video name included
+            clip_output = os.path.join(output_folder, f"{base_filename}_clip_{i}{os.path.splitext(input_file)[1]}")
             vertical_segment.write_videofile(clip_output, codec='libx264')
             logging.info(f"Vertical clip {i} created: {clip_output}")
         
@@ -946,8 +949,10 @@ def create_vertical_clips(input_file: str, viral_clips: List[Dict[str, Any]], ou
 
         # No fallback to copying - we want to fix the resize issue
 
-def save_metadata(viral_clips: List[Dict[str, Any]], output_folder: str) -> None:
-    metadata_file = os.path.join(output_folder, "viral_clips_metadata.json")
+def save_metadata(viral_clips: List[Dict[str, Any]], output_folder: str, input_file: str) -> None:
+    # Get base filename without extension to use in metadata filename
+    base_filename = os.path.splitext(os.path.basename(input_file))[0]
+    metadata_file = os.path.join(output_folder, f"{base_filename}_viral_clips_metadata.json")
     with open(metadata_file, 'w') as f:
         json.dump(viral_clips, f, indent=2)
     logging.info(f"Metadata saved in {metadata_file}")
@@ -969,7 +974,7 @@ def process_video(input_file: str, output_folder: str) -> None:
     create_vertical_clips(input_file, viral_clips, output_folder)
     
     # Save metadata
-    save_metadata(viral_clips, output_folder)
+    save_metadata(viral_clips, output_folder, input_file)
 
 def process_folder(input_folder: str, output_folder: str = None) -> None:
     logging.info(f"Starting to process folder: {input_folder}")
