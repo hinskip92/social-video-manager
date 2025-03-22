@@ -5,6 +5,7 @@ import Header from './components/Header';
 import VideoLibrary from './pages/VideoLibrary';
 import VideoPlayer from './pages/VideoPlayer';
 import Settings from './pages/Settings';
+import VerticalVideoCreator from './pages/VerticalVideoCreator';
 import { DirectoryProvider } from './contexts/DirectoryContext';
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<VideoLibrary globalSearchTerm={globalSearchTerm} setGlobalSearchTerm={setGlobalSearchTerm} />} />
                 <Route path="/video/:id" element={<VideoPlayer />} />
+                <Route path="/vertical-creator" element={<VerticalVideoCreator />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </main>
