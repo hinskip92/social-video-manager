@@ -31,7 +31,7 @@ interface DirectoryContextType {
 const DirectoryContext = createContext<DirectoryContextType | undefined>(undefined);
 
 // Helper function to create safe IDs
-function createSafeId(path: string, name: string): string {
+export function createSafeId(path: string, name: string): string {
   // Use a hash of the file path to create a unique, safe ID
   const hashCode = (str: string) => {
     let hash = 0;
