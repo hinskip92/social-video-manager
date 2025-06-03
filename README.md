@@ -2,6 +2,8 @@
 
 A local, interactive social media video asset manager built with React and Electron. This application allows you to manage multiple directories containing video files, view metadata, and play videos directly within the app.
 
+This project is under active development and many planned features are still a work in progress.
+
 ## Project Status
 
 ### ✅ Implemented Features
@@ -24,6 +26,7 @@ A local, interactive social media video asset manager built with React and Elect
   - ✅ Tailwind CSS for styling
   - ✅ Context API for state management
   - ✅ URL-safe video ID generation for routing
+  - ✅ Basic automated testing setup with Vitest
 
 - **Fixed Issues**
   - ✅ URL-safe routing to handle video navigation
@@ -35,7 +38,7 @@ A local, interactive social media video asset manager built with React and Elect
 ### 🚧 Pending Tasks
 
 - **Features**
-  - 🚧 Video thumbnails generation with ffmpeg
+  - 🚧 Enable video thumbnails generation (backend ffmpeg support added)
   - 🚧 Multiple video selection for batch operations
   - 🚧 Video categorization or tagging system
   - 🚧 Video editing capabilities (trim, crop, etc.)
@@ -44,13 +47,13 @@ A local, interactive social media video asset manager built with React and Elect
   - 🚧 Favorites/bookmarks for frequently used videos
 
 - **Technical Improvements**
-  - 🚧 Automated tests
+  - 🚧 Expand test coverage with Vitest
   - 🚧 Offline capability improvements
   - 🚧 Performance optimization for large video libraries
   - 🚧 Better error handling with user-friendly messages
   - 🚧 Proper logging system
   - 🚧 Application settings storage
-  - 🚧 Cross-platform packaging and distribution
+  - 🚧 Cross-platform packaging and distribution (electron-builder configured)
 
 ## Setup and Installation
 
