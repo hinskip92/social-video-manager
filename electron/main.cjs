@@ -131,6 +131,43 @@ function setupIpcHandlers() {
       return null;
     }
   });
+
+  // Basic video editing (trim and crop)
+  ipcMain.handle('video:edit', async (_, inputPath, options) => {
+    try {
+      const { startTime, duration, crop } = options || {};
+      const parsed = path.parse(inputPath);
+      const outputPath = path.join(parsed.dir, `${parsed.name}_edited${parsed.ext}`);
+
+      return await new Promise((resolve, reject) => {
+        let command = ffmpeg(inputPath).output(outputPath);
+
+        if (typeof startTime !== 'undefined') {
+          command = command.setStartTime(startTime);
+        }
+
+        if (typeof duration !== 'undefined') {
+          command = command.setDuration(duration);
+        }
+
+        if (crop) {
+          const { width, height, x, y } = crop;
+          command = command.videoFilters(`crop=${width}:${height}:${x}:${y}`);
+        }
+
+        command
+          .on('error', err => {
+            console.error('Video edit error:', err);
+            reject(err);
+          })
+          .on('end', () => resolve(outputPath))
+          .run();
+      });
+    } catch (error) {
+      console.error('Error editing video:', error);
+      throw error;
+    }
+  });
 }
 
 function createWindow() {

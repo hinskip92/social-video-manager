@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import ReactPlayer from 'react-player';
+import type { Video } from "../contexts/DirectoryContext";
 import { useDirectories } from '../contexts/DirectoryContext';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -8,7 +9,7 @@ const VideoPlayer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getVideoById, setSelectedVideo, updateVideoMetadata } = useDirectories();
-  const [video, setVideo] = useState<any>(null);
+  const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
@@ -80,9 +81,9 @@ const VideoPlayer = () => {
 
   // Format the file path for video playback
   // Use an absolute URL with proper protocol
-  const videoUrl = `file:///${video.path.replace(/\/g, '/')}`;
-  
-  const handlePlayerError = (error: any) => {
+  const sanitizedPath = video.path.split("\\").join("/")
+  const videoUrl = `file:///${sanitizedPath}`;
+  const handlePlayerError = (error: unknown) => {
     console.error('ReactPlayer error:', error);
     setPlayerError(`Error playing video: ${error?.message || 'Unknown error'}`);
   };
@@ -221,6 +222,12 @@ const VideoPlayer = () => {
             >
               Save Metadata
             </button>
+            <Link
+              to={`/video/${video.id}/edit`}
+              className="ml-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Edit Video
+            </Link>
           </div>
         </div>
       </div>
@@ -228,4 +235,4 @@ const VideoPlayer = () => {
   );
 };
 
-export default VideoPlayer; 
+export default VideoPlayer;

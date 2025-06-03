@@ -5,7 +5,7 @@ interface Directory {
   name: string;
 }
 
-interface Video {
+export interface Video {
   id: string;
   name: string;
   path: string;

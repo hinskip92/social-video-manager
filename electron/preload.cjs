@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   readDirectory: (path) => ipcRenderer.invoke('fs:readDirectory', path),
   getVideoThumbnail: (videoPath) => ipcRenderer.invoke('video:getThumbnail', videoPath),
-}); 
+  editVideo: (inputPath, options) => ipcRenderer.invoke('video:edit', inputPath, options),
+});

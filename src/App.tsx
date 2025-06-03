@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import VideoLibrary from './pages/VideoLibrary';
 import VideoPlayer from './pages/VideoPlayer';
+import VideoEditor from './pages/VideoEditor';
 import Settings from './pages/Settings';
 import { DirectoryProvider } from './contexts/DirectoryContext';
 
@@ -42,6 +43,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<VideoLibrary />} />
                 <Route path="/video/:id" element={<VideoPlayer />} />
+                <Route path="/video/:id/edit" element={<VideoEditor />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </main>

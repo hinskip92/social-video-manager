@@ -20,8 +20,8 @@ const VideoLibrary = () => {
   const { videos, directories, selectedDirectory, refreshVideos, setSelectedVideo } = useDirectories();
   const [filteredVideos, setFilteredVideos] = useState<VideoWithThumbnail[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'date'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy] = useState<'name' | 'date'>('date');
+  const [sortOrder] = useState<'asc' | 'desc'>('desc');
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailsEnabled, setThumbnailsEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -148,16 +148,7 @@ const VideoLibrary = () => {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
-  const toggleSort = (field: 'name' | 'date') => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-
-  return (
+return (
     <div className="py-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
@@ -264,5 +255,4 @@ const VideoLibrary = () => {
     </div>
   );
 };
-
-export default VideoLibrary; 
+export default VideoLibrary;
