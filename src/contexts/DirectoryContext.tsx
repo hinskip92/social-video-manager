@@ -13,6 +13,8 @@ interface Video {
   createdAt: Date;
   modifiedAt: Date;
   directory: string;
+  category?: string;
+  tags?: string[];
 }
 
 interface DirectoryContextType {
@@ -26,6 +28,10 @@ interface DirectoryContextType {
   setSelectedVideo: (video: Video | null) => void;
   refreshVideos: () => Promise<void>;
   getVideoById: (id: string) => Video | undefined;
+  updateVideoMetadata: (
+    id: string,
+    metadata: { category?: string; tags?: string[] }
+  ) => void;
 }
 
 const DirectoryContext = createContext<DirectoryContextType | undefined>(undefined);
@@ -50,6 +56,30 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+
+  const META_KEY = 'videoMetadata';
+
+  function loadMetadata(id: string) {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (!raw) return {};
+      const data = JSON.parse(raw);
+      return data[id] || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveMetadata(id: string, metadata: { category?: string; tags?: string[] }) {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      data[id] = { ...(data[id] || {}), ...metadata };
+      localStorage.setItem(META_KEY, JSON.stringify(data));
+    } catch {
+      // ignore
+    }
+  }
 
   async function addDirectory(path: string) {
     // Extract directory name from path
@@ -100,15 +130,21 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       // Convert to our video format
       const newVideos = files
         .filter(file => !file.isDirectory)
-        .map(file => ({
-          id: createSafeId(dirPath, file.name), // Create a unique ID that's safe for URLs
-          name: file.name,
-          path: file.path,
-          size: file.size,
-          createdAt: new Date(file.createdAt),
-          modifiedAt: new Date(file.modifiedAt),
-          directory: dirPath,
-        }));
+        .map(file => {
+          const id = createSafeId(dirPath, file.name);
+          const meta = loadMetadata(id);
+          return {
+            id,
+            name: file.name,
+            path: file.path,
+            size: file.size,
+            createdAt: new Date(file.createdAt),
+            modifiedAt: new Date(file.modifiedAt),
+            directory: dirPath,
+            category: meta.category,
+            tags: meta.tags || [],
+          } as Video;
+        });
       
       // Merge with existing videos, removing duplicates
       setVideos(prev => {
@@ -131,6 +167,18 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function updateVideoMetadata(
+    id: string,
+    metadata: { category?: string; tags?: string[] }
+  ) {
+    setVideos(prev =>
+      prev.map(video =>
+        video.id === id ? { ...video, ...metadata } : video
+      )
+    );
+    saveMetadata(id, metadata);
+  }
+
   return (
     <DirectoryContext.Provider
       value={{
@@ -144,6 +192,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         setSelectedVideo,
         refreshVideos,
         getVideoById,
+        updateVideoMetadata,
       }}
     >
       {children}
