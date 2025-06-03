@@ -64,8 +64,9 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
       path,
       name: dirName,
     };
-    
-    setDirectories([...directories, newDirectory]);
+
+    // Use functional update to avoid relying on stale state
+    setDirectories((prev) => [...prev, newDirectory]);
     
     // If this is the first directory, set it as selected
     if (directories.length === 0) {
@@ -110,10 +111,11 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         }));
       
       // Merge with existing videos, removing duplicates
-      const existingPaths = videos.map(v => v.path);
-      const uniqueNewVideos = newVideos.filter(v => !existingPaths.includes(v.path));
-      
-      setVideos([...videos, ...uniqueNewVideos]);
+      setVideos(prev => {
+        const existing = new Set(prev.map(v => v.path));
+        const uniqueNewVideos = newVideos.filter(v => !existing.has(v.path));
+        return [...prev, ...uniqueNewVideos];
+      });
     } catch (error) {
       console.error('Error loading videos:', error);
     }
