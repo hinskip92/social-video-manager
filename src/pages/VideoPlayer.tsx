@@ -7,12 +7,14 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 const VideoPlayer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getVideoById, setSelectedVideo } = useDirectories();
+  const { getVideoById, setSelectedVideo, updateVideoMetadata } = useDirectories();
   const [video, setVideo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const playerRef = useRef<ReactPlayer>(null);
+  const [category, setCategory] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -20,6 +22,8 @@ const VideoPlayer = () => {
       if (foundVideo) {
         setVideo(foundVideo);
         setSelectedVideo(foundVideo);
+        setCategory(foundVideo.category || '');
+        setTagsInput(foundVideo.tags ? foundVideo.tags.join(', ') : '');
         setIsLoading(false);
       } else {
         setError(`Video not found with ID: ${id}`);
@@ -177,7 +181,7 @@ const VideoPlayer = () => {
           
           {/* Add a direct link to open the video in the system's default player */}
           <div className="mt-6">
-            <button 
+            <button
               onClick={() => {
                 // Try to open the file with the system's default video player
                 // This is a fallback if in-app playback doesn't work
@@ -186,6 +190,36 @@ const VideoPlayer = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Open in Default Player
+            </button>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+              <input
+                type="text"
+                className="mt-1 p-2 w-full border rounded-md dark:bg-gray-700 dark:text-gray-300"
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags (comma separated)</label>
+              <input
+                type="text"
+                className="mt-1 p-2 w-full border rounded-md dark:bg-gray-700 dark:text-gray-300"
+                value={tagsInput}
+                onChange={e => setTagsInput(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => {
+                const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+                updateVideoMetadata(video.id, { category, tags });
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Save Metadata
             </button>
           </div>
         </div>

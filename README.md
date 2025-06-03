@@ -16,6 +16,7 @@ This project is under active development and many planned features are still a w
   - ✅ Dark/light mode support
   - ✅ Search functionality for videos
   - ✅ Sort videos by name or date
+  - ✅ Video categorization and tagging system
   - ✅ Open videos in system default player (fallback option)
   - ✅ Responsive layout that works on various screen sizes
 
@@ -40,7 +41,6 @@ This project is under active development and many planned features are still a w
 - **Features**
   - 🚧 Enable video thumbnails generation (backend ffmpeg support added)
   - 🚧 Multiple video selection for batch operations
-  - 🚧 Video categorization or tagging system
   - 🚧 Video editing capabilities (trim, crop, etc.)
   - 🚧 Export/share functionality for social media platforms
   - 🚧 Recent files list

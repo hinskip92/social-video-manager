@@ -12,6 +12,8 @@ interface VideoWithThumbnail {
   modifiedAt: Date;
   directory: string;
   thumbnail?: string;
+  category?: string;
+  tags?: string[];
 }
 
 const VideoLibrary = () => {
@@ -22,6 +24,8 @@ const VideoLibrary = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailsEnabled, setThumbnailsEnabled] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const categories = Array.from(new Set(videos.map(v => v.category).filter(Boolean)));
 
   // Load thumbnails for videos
   useEffect(() => {
@@ -72,17 +76,23 @@ const VideoLibrary = () => {
   // Filter videos based on selected directory and search term
   const filterAndSortVideos = (videosToFilter = videos) => {
     let result = [...videosToFilter];
-    
+
     // Filter by directory if one is selected
     if (selectedDirectory) {
       result = result.filter(video => video.directory === selectedDirectory);
     }
-    
+
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      result = result.filter(video => video.category === categoryFilter);
+    }
+
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(video => 
-        video.name.toLowerCase().includes(term)
+      result = result.filter(video =>
+        video.name.toLowerCase().includes(term) ||
+        (video.tags && video.tags.some(tag => tag.toLowerCase().includes(term)))
       );
     }
     
@@ -108,7 +118,7 @@ const VideoLibrary = () => {
       const updatedVideos = videos.map(video => ({ ...video, thumbnail: undefined }));
       filterAndSortVideos(updatedVideos);
     }
-  }, [selectedDirectory, searchTerm, sortBy, sortOrder]);
+  }, [selectedDirectory, searchTerm, sortBy, sortOrder, categoryFilter]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -165,6 +175,18 @@ const VideoLibrary = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <div>
+            <select
+              className="px-2 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
           <button
             onClick={handleRefresh}
             className="p-2 text-gray-500 bg-white rounded-md hover:text-gray-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
@@ -217,6 +239,23 @@ const VideoLibrary = () => {
                   <span>{formatFileSize(video.size)}</span>
                   <span>{formatDate(video.modifiedAt)}</span>
                 </div>
+                {video.category && (
+                  <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                    {video.category}
+                  </div>
+                )}
+                {video.tags && video.tags.length > 0 && (
+                  <div className="mt-1 space-x-1">
+                    {video.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-block px-1 py-0.5 bg-gray-200 dark:bg-gray-700 text-xs rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </Link>
           ))}
