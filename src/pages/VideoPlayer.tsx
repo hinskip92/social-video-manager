@@ -76,7 +76,7 @@ const VideoPlayer = () => {
 
   // Format the file path for video playback
   // Use an absolute URL with proper protocol
-  const videoUrl = `file:///${video.path.replace(/\\/g, '/')}`;
+  const videoUrl = `file:///${video.path.replace(/\/g, '/')}`;
   
   const handlePlayerError = (error: any) => {
     console.error('ReactPlayer error:', error);
