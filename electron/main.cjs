@@ -7,6 +7,7 @@ const stat = promisify(fs.stat);
 const url = require('url');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const { registerExportHandlers } = require('./ipc/export.cjs');
 
 // Set the ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -168,6 +169,9 @@ function setupIpcHandlers() {
       throw error;
     }
   });
+  
+  // Register export/transcode handlers
+  registerExportHandlers();
 }
 
 function createWindow() {
@@ -224,4 +228,4 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
-}); 
+});

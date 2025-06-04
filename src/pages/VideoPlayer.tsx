@@ -4,6 +4,7 @@ import ReactPlayer from 'react-player';
 import type { Video } from "../contexts/DirectoryContext";
 import { useDirectories } from '../contexts/DirectoryContext';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import ExportModal from '../components/ExportModal';
 
 const VideoPlayer = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +16,8 @@ const VideoPlayer = () => {
   const [playerError, setPlayerError] = useState<string | null>(null);
   const playerRef = useRef<ReactPlayer>(null);
   const [category, setCategory] = useState('');
-  const [tagsInput, setTagsInput] = useState('');
+const [tagsInput, setTagsInput] = useState('');
+const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -83,9 +85,13 @@ const VideoPlayer = () => {
   // Use an absolute URL with proper protocol
   const sanitizedPath = video.path.split("\\").join("/")
   const videoUrl = `file:///${sanitizedPath}`;
-  const handlePlayerError = (error: unknown) => {
-    console.error('ReactPlayer error:', error);
-    setPlayerError(`Error playing video: ${error?.message || 'Unknown error'}`);
+  const handlePlayerError = (err: unknown) => {
+    console.error('ReactPlayer error:', err);
+    const message =
+      typeof err === 'object' && err && 'message' in err
+        ? (err as { message: string }).message
+        : 'Unknown error';
+    setPlayerError(`Error playing video: ${message}`);
   };
 
   return (
@@ -213,7 +219,7 @@ const VideoPlayer = () => {
                 onChange={e => setTagsInput(e.target.value)}
               />
             </div>
-            <button
+<button
               onClick={() => {
                 const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
                 updateVideoMetadata(video.id, { category, tags });
@@ -222,12 +228,21 @@ const VideoPlayer = () => {
             >
               Save Metadata
             </button>
-            <Link
+            <button
+              onClick={() => setShowExport(true)}
+              className="ml-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Export
+            </button>
+<Link
               to={`/video/${video.id}/edit`}
               className="ml-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Edit Video
             </Link>
+{showExport && (
+  <ExportModal videoPath={video.path} onClose={() => setShowExport(false)} />
+)}
           </div>
         </div>
       </div>
