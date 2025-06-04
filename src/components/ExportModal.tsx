@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { EXPORT_PRESETS, PresetKey } from '../constants/exportPresets';
 import { useTranscode } from '../hooks/useTranscode';
+import type { CropRect } from '../hooks/useTranscode';
 
 /**
  * Modal for selecting a social-media export preset and monitoring progress.
@@ -13,10 +14,22 @@ interface ExportModalProps {
 export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
   const [preset, setPreset] = useState<PresetKey>('instagramReel');
   const { progress, completedPath, error, start, reset } = useTranscode();
+  const [crop, setCrop] = useState<CropRect | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const beginExport = () => {
     reset();
-    start(videoPath, preset);
+    start(videoPath, preset, undefined, crop || undefined);
+  };
+
+  const analyzeCrop = async () => {
+    setAnalyzing(true);
+    try {
+      const result = await window.electronAPI.analyzeCrop(videoPath);
+      if (result) setCrop(result);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const openFile = () => {
@@ -68,12 +81,26 @@ export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
             </p>
           </>
         ) : (
-          <button
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            onClick={beginExport}
-          >
-            Start Export
-          </button>
+          <div className="space-y-2">
+            <button
+              className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              onClick={beginExport}
+            >
+              Start Export
+            </button>
+            <button
+              className="rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 disabled:opacity-50"
+              onClick={analyzeCrop}
+              disabled={analyzing}
+            >
+              {analyzing ? 'Analyzing...' : 'Smart Crop'}
+            </button>
+            {crop && (
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Crop {crop.w}×{crop.h}+{crop.x}+{crop.y} ({(crop.confidence * 100).toFixed(0)}%)
+              </p>
+            )}
+          </div>
         )}
 
         {/* Completion buttons */}

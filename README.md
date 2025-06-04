@@ -42,6 +42,7 @@ This project is under active development and many planned features are still a w
   - 🚧 Enable video thumbnails generation (backend ffmpeg support added)
   - 🚧 Multiple video selection for batch operations
   - ✅ Video editing capabilities (trim, crop, etc.)
+  - ✅ Intelligent crop detection for social-media export
   - 🚧 Export/share functionality for social media platforms
   - 🚧 Recent files list
   - 🚧 Favorites/bookmarks for frequently used videos
