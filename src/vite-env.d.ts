@@ -1,5 +1,13 @@
 /// <reference types="vite/client" />
 
+interface CropRect {
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+  confidence: number;
+}
+
 interface ElectronAPI {
   /* Existing */
   openDirectory: () => Promise<string[]>;
@@ -11,17 +19,18 @@ interface ElectronAPI {
   exportStart: (
     inputPath: string,
     preset: 'instagramReel' | 'tiktok' | 'twitter',
-    outputDir?: string
+    outputDir?: string,
+    crop?: CropRect
+  ) => void;
   onExportProgress: (cb: (data: ExportProgress) => void) => void;
   onceExportCompleted: (cb: (data: { outputPath: string }) => void) => void;
   onceExportError: (cb: (data: { message: string }) => void) => void;
 
   /* Shell helper */
   shellOpen: (filePath: string) => void;
-  analyzeCrop: (    videoPath: string
- =mise<
-    
-  
+
+  analyzeCrop: (videoPath: string) => Promise<CropRect | null>;
+}
 
 interface ExportProgress {
   percent: number;
@@ -46,5 +55,4 @@ interface FileDetails {
 
 interface Window {
   electronAPI: ElectronAPI;
-}
 }
