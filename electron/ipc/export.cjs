@@ -6,7 +6,7 @@
 const { ipcMain, shell } = require('electron');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 
 /**
  * Keep preset definitions close to the export logic to avoid import issues
@@ -60,9 +60,21 @@ function registerExportHandlers() {
    */
   ipcMain.handle('export:analyzeCrop', async (_, videoPath) => {
     try {
-      // Run cropdetect over the first 5 seconds
-      const cmd = `ffmpeg -ss 0 -i "${videoPath}" -t 5 -vf cropdetect=24:16:0 -an -f null -`;
-      const stderr = execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'ignore', 'pipe'] });
+      // Run cropdetect over the first 5 seconds using bundled ffmpeg
+      const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+      const args = [
+        '-ss', '0',
+        '-i', videoPath,
+        '-t', '5',
+        '-vf', 'cropdetect=24:16:0',
+        '-an',
+        '-f', 'null',
+        '-'
+      ];
+      const { stderr } = spawnSync(ffmpegPath, args, { encoding: 'utf8' });
+      if (typeof stderr !== 'string') {
+        throw new Error(`ffmpeg stderr was not a string. ${stderr}`);
+      }
       // Extract crop=WxH:X:Y matches
       const matches = stderr.match(/crop=\\d+:\\d+:\\d+:\\d+/g) || [];
       if (matches.length === 0) return null;
