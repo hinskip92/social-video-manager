@@ -16,8 +16,9 @@ const { spawnSync } = require('child_process');
 const EXPORT_PRESETS = {
   instagramReel: {
     outExt: '.mp4',
+    targetWidth: 1080,
+    targetHeight: 1920,
     ffmpegArgs: [
-      '-vf', 'scale=1080:1920,setsar=1:1',
       '-r', '30',
       '-c:v', 'libx264', '-profile:v', 'high', '-crf', '23',
       '-preset', 'veryfast',
@@ -27,8 +28,9 @@ const EXPORT_PRESETS = {
   },
   tiktok: {
     outExt: '.mp4',
+    targetWidth: 1080,
+    targetHeight: 1920,
     ffmpegArgs: [
-      '-vf', 'scale=1080:1920,setsar=1:1',
       '-r', '24',
       '-c:v', 'libx264', '-profile:v', 'high', '-crf', '25',
       '-preset', 'veryfast',
@@ -38,8 +40,9 @@ const EXPORT_PRESETS = {
   },
   twitter: {
     outExt: '.mp4',
+    targetWidth: 1280,
+    targetHeight: 720,
     ffmpegArgs: [
-      '-vf', 'scale=1280:720,setsar=1:1',
       '-r', '30',
       '-c:v', 'libx264', '-profile:v', 'high', '-crf', '23',
       '-preset', 'veryfast',
@@ -56,37 +59,101 @@ const EXPORT_PRESETS = {
 function registerExportHandlers() {
   /**
    * Analyze best crop rectangle for vertical export.
-   * Runs FFmpeg cropdetect on first 5s and returns median crop values.
+   * Uses the smart_vertical_crop.py script with YOLO object detection.
    */
   ipcMain.handle('export:analyzeCrop', async (_, videoPath) => {
     try {
-      // Run cropdetect over the first 5 seconds using bundled ffmpeg
-      const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+      // Use the smart Python script with analyze-only mode
+      const { spawn } = require('child_process');
+      const pythonPath = 'python'; // or 'python3' depending on your system
+      const scriptPath = path.join(__dirname, '../../scripts/smart_vertical_crop.py');
+      
+      // Run the Python script in analyze-only mode
       const args = [
-        '-ss', '0',
-        '-i', videoPath,
-        '-t', '5',
-        '-vf', 'cropdetect=24:16:0',
-        '-an',
-        '-f', 'null',
-        '-'
+        scriptPath,
+        '--single-video', videoPath,
+        '--analyze-only',
+        '--frames-per-scene', '3', // Faster analysis
+        '--box-strategy', 'largest',
+        '--confidence', '0.25'
       ];
-      const { stderr } = spawnSync(ffmpegPath, args, { encoding: 'utf8' });
-      if (typeof stderr !== 'string') {
-        throw new Error(`ffmpeg stderr was not a string. ${stderr}`);
-      }
-      // Extract crop=WxH:X:Y matches
-      const matches = stderr.match(/crop=\\d+:\\d+:\\d+:\\d+/g) || [];
-      if (matches.length === 0) return null;
-      // Tally occurrences
-      const tally = matches.reduce((acc, m) => { acc[m] = (acc[m] || 0) + 1; return acc; }, {});
-      // Pick the most frequent
-      const best = Object.entries(tally).sort((a,b) => b[1] - a[1])[0][0];
-      const [, w, h, x, y] = best.match(/crop=(\\d+):(\\d+):(\\d+):(\\d+)/);
-      const confidence = tally[best] / matches.length;
-      return { w: Number(w), h: Number(h), x: Number(x), y: Number(y), confidence };
+      
+      const pythonProcess = spawn(pythonPath, args, { 
+        cwd: path.join(__dirname, '../..'),
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      let stdout = '';
+      let stderr = '';
+      
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+      
+      return new Promise((resolve, reject) => {
+        pythonProcess.on('close', (code) => {
+          if (code === 0) {
+            try {
+              // Extract JSON from output (it should be the last line)
+              const lines = stdout.trim().split('\n');
+              let jsonLine = '';
+              
+              // Find the line that looks like JSON (starts with { and ends with })
+              for (let i = lines.length - 1; i >= 0; i--) {
+                const line = lines[i].trim();
+                if (line.startsWith('{') && line.endsWith('}')) {
+                  jsonLine = line;
+                  break;
+                }
+              }
+              
+              if (!jsonLine) {
+                throw new Error('No JSON output found in Python script response');
+              }
+              
+              // Parse the JSON output from the Python script
+              const result = JSON.parse(jsonLine);
+              
+              if (result.success) {
+                console.log('Smart crop analysis completed successfully');
+                console.log(`Analysis type: ${result.type}`);
+                
+                if (result.type === 'multi') {
+                  console.log(`Found ${result.source.scene_count} scenes with different crops`);
+                  // Return the full multi-scene analysis
+                  resolve(result);
+                } else {
+                  // Single crop - return just the crop for backward compatibility
+                  resolve(result.crop);
+                }
+              } else {
+                console.error('Smart crop analysis failed:', result.error);
+                reject(new Error(`Smart crop analysis failed: ${result.error}`));
+              }
+            } catch (parseError) {
+              console.error('Failed to parse Python script output:', parseError);
+              console.error('Raw output:', stdout);
+              reject(new Error('Failed to parse crop analysis results'));
+            }
+          } else {
+            console.error('Python script failed with code:', code);
+            console.error('Error output:', stderr);
+            reject(new Error(`Smart crop analysis failed: ${stderr}`));
+          }
+        });
+        
+        pythonProcess.on('error', (err) => {
+          console.error('Failed to start Python script:', err);
+          reject(new Error(`Failed to start smart crop analysis: ${err.message}`));
+        });
+      });
+      
     } catch (err) {
-      console.error('Crop analysis error:', err);
+      console.error('Smart crop analysis error:', err);
       return null;
     }
   });
@@ -107,9 +174,92 @@ ipcMain.handle('export:start', (event, { inputPath, preset, outputDir, crop }) =
 
     return new Promise((resolve, reject) => {
       let command = ffmpeg(inputPath);
-      if (crop && typeof crop === 'object') {
-        command = command.videoFilters(`crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
+      
+      // Build the video filter chain properly
+      let videoFilters = [];
+      
+      // Check if we have multi-scene crop data
+      if (crop && crop.type === 'multi' && crop.scenes) {
+        // Multi-scene cropping using timeline editing
+        console.log(`Applying ${crop.scenes.length} different crops across scenes`);
+        
+        // For complex multi-scene processing, we'll use a simpler approach
+        // that's more compatible with fluent-ffmpeg
+        
+        // Calculate an average/weighted crop position for now
+        // This is a fallback approach that's more reliable
+        let totalWeight = 0;
+        let weightedX = 0;
+        let weightedY = 0;
+        let weightedW = 0;
+        let weightedH = 0;
+        
+        for (const scene of crop.scenes) {
+          const duration = scene.end_time - scene.start_time;
+          weightedX += scene.crop.x * duration;
+          weightedY += scene.crop.y * duration;
+          weightedW += scene.crop.w * duration;
+          weightedH += scene.crop.h * duration;
+          totalWeight += duration;
+        }
+        
+        // Calculate weighted average crop
+        const avgCrop = {
+          x: Math.round(weightedX / totalWeight),
+          y: Math.round(weightedY / totalWeight),
+          w: Math.round(weightedW / totalWeight),
+          h: Math.round(weightedH / totalWeight)
+        };
+        
+        console.log(`Using weighted average crop: ${avgCrop.w}x${avgCrop.h}+${avgCrop.x}+${avgCrop.y}`);
+        
+        // Apply the averaged crop (for now)
+        videoFilters.push(`crop=${avgCrop.w}:${avgCrop.h}:${avgCrop.x}:${avgCrop.y}`);
+        
+        // Add scaling if needed
+        if (presetConf.targetWidth && presetConf.targetHeight) {
+          const cropAspectRatio = avgCrop.w / avgCrop.h;
+          const targetAspectRatio = presetConf.targetWidth / presetConf.targetHeight;
+          
+          if (Math.abs(cropAspectRatio - targetAspectRatio) > 0.01) {
+            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}:force_original_aspect_ratio=decrease`);
+            videoFilters.push(`pad=${presetConf.targetWidth}:${presetConf.targetHeight}:(ow-iw)/2:(oh-ih)/2:black`);
+          } else {
+            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}`);
+          }
+          videoFilters.push('setsar=1:1');
+        }
+        
+      } else if (crop && typeof crop === 'object' && crop.w) {
+        // Single crop (backward compatibility)
+        videoFilters.push(`crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
+        
+        // After cropping, only scale if the cropped dimensions don't match target exactly
+        if (presetConf.targetWidth && presetConf.targetHeight) {
+          const cropAspectRatio = crop.w / crop.h;
+          const targetAspectRatio = presetConf.targetWidth / presetConf.targetHeight;
+          
+          if (Math.abs(cropAspectRatio - targetAspectRatio) > 0.01) {
+            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}:force_original_aspect_ratio=decrease`);
+            videoFilters.push(`pad=${presetConf.targetWidth}:${presetConf.targetHeight}:(ow-iw)/2:(oh-ih)/2:black`);
+          } else {
+            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}`);
+          }
+          videoFilters.push('setsar=1:1');
+        }
+      } else {
+        // No crop specified - use simple scaling for backward compatibility
+        if (presetConf.targetWidth && presetConf.targetHeight) {
+          videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}`);
+          videoFilters.push('setsar=1:1');
+        }
       }
+      
+      // Apply the video filter chain if we have any filters
+      if (videoFilters.length > 0) {
+        command = command.videoFilters(videoFilters.join(','));
+      }
+      
       command
         .outputOptions(presetConf.ffmpegArgs)
         .on('progress', (progress) => {

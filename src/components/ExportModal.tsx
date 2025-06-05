@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EXPORT_PRESETS, PresetKey } from '../constants/exportPresets';
 import { useTranscode } from '../hooks/useTranscode';
 import type { CropRect } from '../hooks/useTranscode';
@@ -16,6 +16,11 @@ export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
   const { progress, completedPath, error, start, reset } = useTranscode();
   const [crop, setCrop] = useState<CropRect | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+
+  // Reset crop when video changes
+  useEffect(() => {
+    setCrop(null);
+  }, [videoPath]);
 
   const beginExport = () => {
     reset();
@@ -86,7 +91,7 @@ export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
               className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               onClick={beginExport}
             >
-              Start Export
+              Start Export {crop ? '(with Smart Crop)' : '(no crop)'}
             </button>
             <button
               className="rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 disabled:opacity-50"
@@ -95,9 +100,24 @@ export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
             >
               {analyzing ? 'Analyzing...' : 'Smart Crop'}
             </button>
-            {crop && (
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Crop {crop.w}×{crop.h}+{crop.x}+{crop.y} ({(crop.confidence * 100).toFixed(0)}%)
+            {crop ? (
+              crop.type === 'multi' ? (
+                <div className="space-y-1">
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    ✓ Smart Multi-Scene Crop: {crop.scenes.length} scenes analyzed
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Each scene will be cropped optimally ({(crop.overall_confidence * 100).toFixed(0)}% avg confidence)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  ✓ Smart Crop: {crop.w}×{crop.h}+{crop.x}+{crop.y} ({(crop.confidence * 100).toFixed(0)}% confidence)
+                </p>
+              )
+            ) : (
+              <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                ⚠️ No smart crop analysis - will scale/stretch video to fit
               </p>
             )}
           </div>

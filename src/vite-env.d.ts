@@ -1,12 +1,46 @@
 /// <reference types="vite/client" />
 
-interface CropRect {
+// Single crop rectangle
+interface SingleCropRect {
   w: number;
   h: number;
   x: number;
   y: number;
   confidence: number;
 }
+
+// Scene-based crop with timing
+interface SceneCrop {
+  start_time: number;
+  end_time: number;
+  crop: SingleCropRect;
+}
+
+// Multi-scene crop analysis result
+interface MultiSceneCrop {
+  type: 'multi';
+  scenes: SceneCrop[];
+  overall_confidence: number;
+  source: {
+    width: number;
+    height: number;
+    duration: number;
+    scene_count: number;
+  };
+}
+
+// Single scene crop analysis result
+interface SingleSceneCrop {
+  type: 'single';
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+  confidence: number;
+}
+
+// Union type for all crop analysis results
+type CropRect = SingleCropRect | MultiSceneCrop | SingleSceneCrop;
 
 interface ElectronAPI {
   /* Existing */
