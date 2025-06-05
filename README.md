@@ -139,5 +139,56 @@ The application uses a layered architecture:
 - **File System Access**: Electron's IPC for communication with Node.js
 - **Video Handling**: ReactPlayer for playback, with fallback to system default
 
+## Python Utilities
+
+### Smart Auto-Crop Script
+
+This repository includes a standalone Python script located at
+`scripts/smart_vertical_crop.py` that converts 16:9 landscape videos into
+9:16 vertical clips. It uses **PySceneDetect** to split each input video into
+scenes and **YOLOv8** to detect people so the crop can follow the primary
+subject.
+
+Below is a quick tutorial for running the script.
+
+### Tutorial
+
+1. **Install the dependencies** and make sure `ffmpeg` is available on your
+   system path:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Prepare the directories.** Create the following folders next to the
+   repository (or specify them with CLI options):
+
+   ```text
+   input_videos/    # put your 16:9 source videos here
+   output_videos/   # final vertical videos will be written here
+   temp_scenes/     # scenes detected by PySceneDetect
+   temp_frames/     # frames extracted for YOLO analysis
+   cropped_scenes/  # cropped scene files before concatenation
+   ```
+
+3. **Add your footage** to `input_videos/`. Any `.mp4`, `.mov`, `.mkv`, or `.avi`
+   file will be processed.
+
+4. **Run the script**. The example below uses the defaults but you can add any
+   of the optional flags:
+
+   ```bash
+   python scripts/smart_vertical_crop.py \
+       --frames-per-scene 5 \
+       --box-strategy largest
+   ```
+
+   Use `--help` to see all available options, including how to pick the best
+   subject box strategy, scale the final output, or overwrite existing files.
+
+5. **Review the results.** Cropped vertical scenes are concatenated into a
+   single output video saved in `output_videos/` with `_vertical` appended to the
+   original filename.
+
 ## License
 MIT
