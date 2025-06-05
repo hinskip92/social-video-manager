@@ -53,6 +53,161 @@ const EXPORT_PRESETS = {
 };
 
 /**
+ * Process multi-scene video with individual crops per scene
+ */
+async function processMultiSceneVideo(inputPath, crop, presetConf, outputPath, event) {
+  const { spawn } = require('child_process');
+  const fs = require('fs');
+  
+  try {
+    // Try a more direct approach using ffmpeg to split scenes based on timestamps
+    console.log(`Processing ${crop.scenes.length} scenes using timestamp-based splitting...`);
+    event.sender.send('export:progress', { 
+      percent: 5, 
+      fps: 0, 
+      eta: `Preparing to process ${crop.scenes.length} scenes...` 
+    });
+    
+    // Step 1: Create temp directories
+    const tempDir = path.join(__dirname, '../../temp_scenes');
+    const processedDir = path.join(__dirname, '../../temp_processed');
+    
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    if (!fs.existsSync(processedDir)) {
+      fs.mkdirSync(processedDir, { recursive: true });
+    }
+    
+    const processedScenes = [];
+    
+    // Step 2: Process each scene directly using timestamps (no PySceneDetect splitting needed)
+    console.log('Processing scenes directly using timestamps...');
+    
+    for (let i = 0; i < crop.scenes.length; i++) {
+      const scene = crop.scenes[i];
+      const progress = 10 + (i / crop.scenes.length) * 75; // 10-85% for scene processing
+      const sceneStartTime = scene.start_time.toFixed(3);
+      const sceneEndTime = scene.end_time.toFixed(3);
+      const sceneDuration = (scene.end_time - scene.start_time).toFixed(3);
+      
+      console.log(`Processing scene ${i + 1}/${crop.scenes.length}: ${sceneStartTime}s-${sceneEndTime}s (${sceneDuration}s)`);
+      
+      event.sender.send('export:progress', { 
+        percent: progress, 
+        fps: 0, 
+        eta: `Scene ${i + 1}/${crop.scenes.length} (${sceneStartTime}s-${sceneEndTime}s)` 
+      });
+      
+      const processedFile = path.join(processedDir, `scene_${i + 1}_processed.mp4`);
+      
+      // Build video filters for this scene
+      let sceneFilters = [];
+      sceneFilters.push(`crop=${scene.crop.w}:${scene.crop.h}:${scene.crop.x}:${scene.crop.y}`);
+      
+      // Add scaling
+      if (presetConf.targetWidth && presetConf.targetHeight) {
+        const cropAspectRatio = scene.crop.w / scene.crop.h;
+        const targetAspectRatio = presetConf.targetWidth / presetConf.targetHeight;
+        
+        if (Math.abs(cropAspectRatio - targetAspectRatio) > 0.01) {
+          sceneFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}:force_original_aspect_ratio=decrease`);
+          sceneFilters.push(`pad=${presetConf.targetWidth}:${presetConf.targetHeight}:(ow-iw)/2:(oh-ih)/2:black`);
+        } else {
+          sceneFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}`);
+        }
+        sceneFilters.push('setsar=1:1');
+      }
+      
+      // Process this scene directly from the original video using timestamps
+      console.log(`Applying crop ${scene.crop.w}x${scene.crop.h}+${scene.crop.x}+${scene.crop.y} to scene ${i + 1}`);
+      
+      await new Promise((resolve, reject) => {
+        const command = ffmpeg(inputPath)
+          .seekInput(scene.start_time)
+          .duration(scene.end_time - scene.start_time)
+          .videoFilters(sceneFilters.join(','))
+          .outputOptions(presetConf.ffmpegArgs)
+          .on('progress', (sceneProgress) => {
+            // Update progress within this scene
+            const scenePercent = (sceneProgress.percent || 0) / 100;
+            const overallProgress = progress + (scenePercent * (75 / crop.scenes.length));
+            event.sender.send('export:progress', { 
+              percent: overallProgress, 
+              fps: sceneProgress.currentFps || 0, 
+              eta: `Scene ${i + 1}/${crop.scenes.length}: ${(sceneProgress.percent || 0).toFixed(1)}%` 
+            });
+          })
+          .on('error', (err) => {
+            console.error(`Error processing scene ${i + 1}:`, err);
+            reject(err);
+          })
+          .on('end', () => {
+            console.log(`Completed scene ${i + 1}/${crop.scenes.length}`);
+            resolve();
+          })
+          .save(processedFile);
+      });
+      
+      processedScenes.push(processedFile);
+    }
+    
+    // Step 3: Concatenate all processed scenes
+    console.log(`Concatenating ${processedScenes.length} processed scenes...`);
+    event.sender.send('export:progress', { 
+      percent: 90, 
+      fps: 0, 
+      eta: `Combining ${processedScenes.length} scenes into final video...` 
+    });
+    
+    const listFile = path.join(processedDir, 'filelist.txt');
+    const listContent = processedScenes.map(f => `file '${f.replace(/'/g, "\\'")}'`).join('\n');
+    fs.writeFileSync(listFile, listContent);
+    
+    console.log(`Final concatenation: ${processedScenes.length} scenes -> ${outputPath}`);
+    
+    await new Promise((resolve, reject) => {
+      ffmpeg()
+        .input(listFile)
+        .inputOptions(['-f', 'concat', '-safe', '0'])
+        .outputOptions(['-c', 'copy'])
+        .on('progress', (progress) => {
+          const percent = 90 + (progress.percent || 0) * 0.1; // 90-100%
+          event.sender.send('export:progress', {
+            percent,
+            fps: progress.currentFps || 0,
+            eta: `Final assembly: ${(progress.percent || 0).toFixed(1)}%`,
+          });
+        })
+        .on('error', reject)
+        .on('end', () => {
+          console.log('Multi-scene processing completed successfully!');
+          resolve();
+        })
+        .save(outputPath);
+    });
+    
+    // Cleanup
+    try {
+      fs.unlinkSync(listFile);
+      processedScenes.forEach(f => {
+        try { fs.unlinkSync(f); } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('Cleanup warning:', e.message);
+    }
+    
+    event.sender.send('export:completed', { outputPath });
+    return outputPath;
+    
+  } catch (error) {
+    console.error('Multi-scene processing error:', error);
+    event.sender.send('export:error', { message: error.message });
+    throw error;
+  }
+}
+
+/**
  * Register export-related IPC handlers.
  * Should be called from main.cjs during app bootstrap.
  */
@@ -180,55 +335,11 @@ ipcMain.handle('export:start', (event, { inputPath, preset, outputDir, crop }) =
       
       // Check if we have multi-scene crop data
       if (crop && crop.type === 'multi' && crop.scenes) {
-        // Multi-scene cropping using timeline editing
-        console.log(`Applying ${crop.scenes.length} different crops across scenes`);
+        // True per-scene cropping using scene-by-scene processing
+        console.log(`Processing ${crop.scenes.length} scenes individually with different crops`);
         
-        // For complex multi-scene processing, we'll use a simpler approach
-        // that's more compatible with fluent-ffmpeg
-        
-        // Calculate an average/weighted crop position for now
-        // This is a fallback approach that's more reliable
-        let totalWeight = 0;
-        let weightedX = 0;
-        let weightedY = 0;
-        let weightedW = 0;
-        let weightedH = 0;
-        
-        for (const scene of crop.scenes) {
-          const duration = scene.end_time - scene.start_time;
-          weightedX += scene.crop.x * duration;
-          weightedY += scene.crop.y * duration;
-          weightedW += scene.crop.w * duration;
-          weightedH += scene.crop.h * duration;
-          totalWeight += duration;
-        }
-        
-        // Calculate weighted average crop
-        const avgCrop = {
-          x: Math.round(weightedX / totalWeight),
-          y: Math.round(weightedY / totalWeight),
-          w: Math.round(weightedW / totalWeight),
-          h: Math.round(weightedH / totalWeight)
-        };
-        
-        console.log(`Using weighted average crop: ${avgCrop.w}x${avgCrop.h}+${avgCrop.x}+${avgCrop.y}`);
-        
-        // Apply the averaged crop (for now)
-        videoFilters.push(`crop=${avgCrop.w}:${avgCrop.h}:${avgCrop.x}:${avgCrop.y}`);
-        
-        // Add scaling if needed
-        if (presetConf.targetWidth && presetConf.targetHeight) {
-          const cropAspectRatio = avgCrop.w / avgCrop.h;
-          const targetAspectRatio = presetConf.targetWidth / presetConf.targetHeight;
-          
-          if (Math.abs(cropAspectRatio - targetAspectRatio) > 0.01) {
-            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}:force_original_aspect_ratio=decrease`);
-            videoFilters.push(`pad=${presetConf.targetWidth}:${presetConf.targetHeight}:(ow-iw)/2:(oh-ih)/2:black`);
-          } else {
-            videoFilters.push(`scale=${presetConf.targetWidth}:${presetConf.targetHeight}`);
-          }
-          videoFilters.push('setsar=1:1');
-        }
+        // Use the scene-by-scene processing approach
+        return processMultiSceneVideo(inputPath, crop, presetConf, outputPath, event);
         
       } else if (crop && typeof crop === 'object' && crop.w) {
         // Single crop (backward compatibility)
