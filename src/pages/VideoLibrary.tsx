@@ -77,8 +77,8 @@ const VideoLibrary = () => {
   const filterAndSortVideos = (videosToFilter = videos) => {
     let result = [...videosToFilter];
 
-    // Filter by directory if one is selected
-    if (selectedDirectory) {
+    // Filter by directory *only* when no search term is provided
+    if (!searchTerm && selectedDirectory) {
       result = result.filter(video => video.directory === selectedDirectory);
     }
 
@@ -148,13 +148,18 @@ const VideoLibrary = () => {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
-return (
+  // Determine page title based on context
+  const pageTitle = searchTerm
+    ? 'Search Results'
+    : selectedDirectory
+    ? directories.find(d => d.path === selectedDirectory)?.name || 'Videos'
+    : 'All Videos';
+
+  return (
     <div className="py-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-          {selectedDirectory 
-            ? directories.find(d => d.path === selectedDirectory)?.name || 'Videos'
-            : 'All Videos'}
+          {pageTitle}
         </h2>
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -195,7 +200,9 @@ return (
               ? 'No directories added yet. Add a directory from the sidebar.'
               : searchTerm
               ? 'No videos match your search.'
-              : 'No videos found in this directory.'}
+              : selectedDirectory
+              ? 'No videos found in this directory.'
+              : 'No videos available.'}
           </p>
           {directories.length > 0 && !searchTerm && (
             <button

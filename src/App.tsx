@@ -5,6 +5,7 @@ import Header from './components/Header';
 import VideoLibrary from './pages/VideoLibrary';
 import VideoPlayer from './pages/VideoPlayer';
 import VideoEditor from './pages/VideoEditor';
+import ScriptViewer from './pages/ScriptViewer';
 import Settings from './pages/Settings';
 import { DirectoryProvider } from './contexts/DirectoryContext';
 
@@ -45,6 +46,7 @@ function App() {
                 <Route path="/video/:id" element={<VideoPlayer />} />
                 <Route path="/video/:id/edit" element={<VideoEditor />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/scripts" element={<ScriptViewer />} />
               </Routes>
             </main>
           </div>

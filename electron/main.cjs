@@ -80,6 +80,48 @@ function setupIpcHandlers() {
     }
   });
 
+  // Handle reading directory contents without extension filter (used for Script Viewer)
+  ipcMain.handle('fs:readAllDirectory', async (_, directoryPath) => {
+    try {
+      const files = await readdir(directoryPath);
+      const fileDetails = await Promise.all(
+        files.map(async (file) => {
+          const filePath = path.join(directoryPath, file);
+          const fileStat = await stat(filePath);
+
+          return {
+            name: file,
+            path: filePath,
+            size: fileStat.size,
+            createdAt: fileStat.birthtime,
+            modifiedAt: fileStat.mtime,
+            isDirectory: fileStat.isDirectory(),
+          };
+        })
+      );
+
+      return fileDetails;
+    } catch (error) {
+      console.error('Error reading directory (all):', error);
+      throw error;
+    }
+  });
+
+  // Handle renaming a file within its directory
+  ipcMain.handle('fs:renameFile', async (_, oldPath, newName) => {
+    try {
+      const dir = path.dirname(oldPath);
+      const newPath = path.join(dir, newName);
+      // Ensure same directory and that newName does not contain path separators
+      if (newName.includes(path.sep)) throw new Error('Invalid file name');
+      await fs.promises.rename(oldPath, newPath);
+      return newPath;
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      throw error;
+    }
+  });
+
   // Generate thumbnail for a video file
   ipcMain.handle('video:getThumbnail', async (_, videoPath) => {
     try {

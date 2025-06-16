@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { EXPORT_PRESETS, PresetKey } from '../constants/exportPresets';
 import { useTranscode } from '../hooks/useTranscode';
 import type { CropRect } from '../hooks/useTranscode';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 /**
  * Modal for selecting a social-media export preset and monitoring progress.
@@ -45,7 +46,15 @@ export default function ExportModal({ videoPath, onClose }: ExportModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+      <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+        {/* Top-right persistent close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 rounded-md p-1 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none"
+          aria-label="Close export modal"
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </button>
         <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
           Export for Social Media
         </h2>

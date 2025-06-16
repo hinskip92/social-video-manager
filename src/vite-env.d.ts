@@ -46,8 +46,10 @@ interface ElectronAPI {
   /* Existing */
   openDirectory: () => Promise<string[]>;
   readDirectory: (path: string) => Promise<FileDetails[]>;
+  readAllDirectory: (path: string) => Promise<FileDetails[]>;
   getVideoThumbnail: (videoPath: string) => Promise<string>;
   editVideo: (inputPath: string, options: EditOptions) => Promise<string>;
+  renameFile: (oldPath: string, newName: string) => Promise<string>;
 
   /* Export / transcode */
   exportStart: (

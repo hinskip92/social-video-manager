@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { useDirectories } from '../contexts/DirectoryContext';
 
 interface SidebarProps {
@@ -83,7 +83,19 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           </div>
         </div>
         
-        <div className="px-4 mt-6">
+        <div className="px-4 mt-6 space-y-2">
+          <Link
+            to="/scripts"
+            className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
+              location.pathname === '/scripts'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <DocumentTextIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+            <span>Scripts</span>
+          </Link>
+
           <Link
             to="/settings"
             className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
