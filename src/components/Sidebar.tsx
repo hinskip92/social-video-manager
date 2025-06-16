@@ -1,6 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
-import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon, DocumentTextIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { useDirectories } from '../contexts/DirectoryContext';
+import { usePhotos } from '../contexts/PhotoContext';
 
 interface SidebarProps {
   open: boolean;
@@ -9,7 +10,9 @@ interface SidebarProps {
 
 const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { directories, selectedDirectory, setSelectedDirectory, addDirectory } = useDirectories();
+  const { directories: photoDirs, selectedDirectory: selectedPhotoDir, setSelectedDirectory: setSelectedPhotoDir, addDirectory: addPhotoDirectory } = usePhotos();
 
   const handleAddDirectory = async () => {
     try {
@@ -19,6 +22,17 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       }
     } catch (error) {
       console.error('Error adding directory:', error);
+    }
+  };
+
+  const handleAddPhotoDirectory = async () => {
+    try {
+      const paths = await window.electronAPI.openDirectory();
+      if (paths && paths.length > 0) {
+        addPhotoDirectory(paths[0]);
+      }
+    } catch (error) {
+      console.error('Error adding photo directory:', error);
     }
   };
 
@@ -41,7 +55,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           </button>
         </div>
         
-        <div className="flex-grow mt-6">
+        <div className="flex-grow mt-6 overflow-y-auto">
           <div className="flex justify-between items-center px-4 mb-2">
             <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
               DIRECTORIES
@@ -81,6 +95,50 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               </ul>
             )}
           </div>
+
+          {/* Photo directories section */}
+          <div className="flex justify-between items-center px-4 mt-6 mb-2">
+            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+              PHOTO DIRS
+            </h2>
+            <button
+              onClick={handleAddPhotoDirectory}
+              className="p-1 text-blue-500 hover:text-blue-600 focus:outline-none"
+              aria-label="Add Photo Directory"
+            >
+              <FolderPlusIcon className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="px-2">
+            {photoDirs.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-center text-gray-500">
+                No photo directories.<br />
+                Click + to add.
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {photoDirs.map((directory) => (
+                  <li key={directory.path}>
+                    <button
+                      className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                        selectedPhotoDir === directory.path
+                          ? 'text-white bg-blue-600'
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                      onClick={() => {
+                        setSelectedPhotoDir(directory.path);
+                        navigate('/photos');
+                      }}
+                    >
+                      <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span className="truncate">{directory.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
         
         <div className="px-4 mt-6 space-y-2">
@@ -106,6 +164,18 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           >
             <Cog6ToothIcon className="w-5 h-5 mr-3 flex-shrink-0" />
             <span>Settings</span>
+          </Link>
+
+          <Link
+            to="/photos"
+            className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
+              location.pathname === '/photos'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+            <span>Photos</span>
           </Link>
         </div>
       </div>

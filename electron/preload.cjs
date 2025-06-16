@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /* Directory & metadata */
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   readDirectory: (dirPath) => ipcRenderer.invoke('fs:readDirectory', dirPath),
+  readImageDirectory: (dirPath) => ipcRenderer.invoke('fs:readImageDirectory', dirPath),
   readAllDirectory: (dirPath) => ipcRenderer.invoke('fs:readAllDirectory', dirPath),
   renameFile: (oldPath, newName) => ipcRenderer.invoke('fs:renameFile', oldPath, newName),
 

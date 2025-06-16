@@ -8,6 +8,8 @@ import VideoEditor from './pages/VideoEditor';
 import ScriptViewer from './pages/ScriptViewer';
 import Settings from './pages/Settings';
 import { DirectoryProvider } from './contexts/DirectoryContext';
+import { PhotoProvider } from './contexts/PhotoContext';
+import PhotoLibrary from './pages/PhotoLibrary';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true); // Default to open
@@ -30,6 +32,7 @@ function App() {
   }, []);
 
   return (
+    <PhotoProvider>
     <DirectoryProvider>
       <Router>
         <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -45,6 +48,7 @@ function App() {
                 <Route path="/" element={<VideoLibrary />} />
                 <Route path="/video/:id" element={<VideoPlayer />} />
                 <Route path="/video/:id/edit" element={<VideoEditor />} />
+                <Route path="/photos" element={<PhotoLibrary />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/scripts" element={<ScriptViewer />} />
               </Routes>
@@ -53,6 +57,7 @@ function App() {
         </div>
       </Router>
     </DirectoryProvider>
+    </PhotoProvider>
   );
 }
 

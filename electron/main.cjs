@@ -80,6 +80,49 @@ function setupIpcHandlers() {
     }
   });
 
+  // Handle reading image directory contents (for Photos feature)
+  ipcMain.handle('fs:readImageDirectory', async (_, directoryPath) => {
+    try {
+      const files = await readdir(directoryPath);
+      const fileDetails = await Promise.all(
+        files.map(async (file) => {
+          const filePath = path.join(directoryPath, file);
+          const fileStat = await stat(filePath);
+
+          // Supported image extensions
+          const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+          const ext = path.extname(file).toLowerCase();
+
+          if (fileStat.isFile() && imageExtensions.includes(ext)) {
+            return {
+              name: file,
+              path: filePath,
+              size: fileStat.size,
+              createdAt: fileStat.birthtime,
+              modifiedAt: fileStat.mtime,
+              isDirectory: false,
+            };
+          } else if (fileStat.isDirectory()) {
+            return {
+              name: file,
+              path: filePath,
+              createdAt: fileStat.birthtime,
+              modifiedAt: fileStat.mtime,
+              isDirectory: true,
+            };
+          }
+          return null;
+        })
+      );
+
+      // Filter out null entries (non-image files)
+      return fileDetails.filter(Boolean);
+    } catch (error) {
+      console.error('Error reading image directory:', error);
+      throw error;
+    }
+  });
+
   // Handle reading directory contents without extension filter (used for Script Viewer)
   ipcMain.handle('fs:readAllDirectory', async (_, directoryPath) => {
     try {
