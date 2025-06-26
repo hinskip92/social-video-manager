@@ -249,8 +249,24 @@ This project is under active development and many planned features are still a w
 
 4. Build for production:
    ```
-   npm run electron:build
+   npm run build
    ```
+
+## Configuration
+
+To use the AI-powered "Chat with Video" feature, you need to set up a Google Gemini API key.
+
+1.  **Create a `.env` file** in the root of the project.
+2.  **Obtain a Gemini API Key**: Visit the [Google AI for Developers](https://ai.google.dev/) site to get your API key.
+3.  **Add the key to your `.env` file**:
+    ```
+    GEMINI_API_KEY=your_api_key_here
+    ```
+The application uses `python-dotenv` to load this key, so ensure the file is correctly named and placed.
+
+## Project Structure
+
+- **`electron/`**: Contains Electron-specific files, including the main process (`main.cjs`) and preload script (`preload.cjs`).
 
 ## Usage Guide
 

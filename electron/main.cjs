@@ -8,6 +8,7 @@ const url = require('url');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const { registerExportHandlers } = require('./ipc/export.cjs');
+const { setupVideoChatHandlers } = require('./ipc/videoChat.cjs');
 
 // Set the ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -26,6 +27,9 @@ let mainWindow;
 
 // Setup IPC handlers - this needs to happen before creating window
 function setupIpcHandlers() {
+  // Video Chat handler
+  setupVideoChatHandlers();
+
   // Handle opening a directory dialog
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

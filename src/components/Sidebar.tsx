@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon, DocumentTextIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, FolderPlusIcon, Cog6ToothIcon, FolderIcon, DocumentTextIcon, PhotoIcon, VideoCameraIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useDirectories } from '../contexts/DirectoryContext';
 import { usePhotos } from '../contexts/PhotoContext';
 
@@ -37,149 +37,195 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   };
 
   return (
-    <aside
-      className={`z-30 fixed inset-y-0 left-0 w-64 transition-transform duration-300 transform bg-white dark:bg-gray-800 md:translate-x-0 ${
-        open ? 'translate-x-0' : '-translate-x-full'
-      }`}
-    >
-      <div className="flex flex-col h-full py-4 overflow-y-auto">
-        <div className="flex items-center justify-between px-4">
-          <Link to="/" className="text-lg font-bold text-gray-800 dark:text-gray-200">
-            Social Video Manager
-          </Link>
-          <button
-            className="p-1 rounded-md text-gray-500 md:hidden focus:outline-none"
-            onClick={() => setOpen(false)}
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
-        
-        <div className="flex-grow mt-6 overflow-y-auto">
-          <div className="flex justify-between items-center px-4 mb-2">
-            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-              DIRECTORIES
-            </h2>
-            <button
-              onClick={handleAddDirectory}
-              className="p-1 text-blue-500 hover:text-blue-600 focus:outline-none"
-              aria-label="Add Directory"
-            >
-              <FolderPlusIcon className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="px-2">
-            {directories.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-center text-gray-500">
-                No directories added yet.<br />
-                Click the + button to add one.
+    <>
+      {/* Mobile backdrop */}
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden animate-fade-in"
+          onClick={() => setOpen(false)}
+        />
+      )}
+      
+      <aside
+        className={`z-30 fixed inset-y-0 left-0 w-72 transition-all duration-300 transform md:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="h-full glass bg-white/95 dark:bg-dark-900/95 border-r border-gray-200/50 dark:border-dark-700/50">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-200/50 dark:border-dark-700/50">
+              <div className="flex items-center justify-between">
+                <Link to="/" className="flex items-center space-x-3 group">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg group-hover:shadow-glow transition-shadow">
+                    <VideoCameraIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-display font-bold text-gray-900 dark:text-white">Video Manager</h1>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Social Media Tools</p>
+                  </div>
+                </Link>
+                <button
+                  className="btn btn-icon btn-ghost md:hidden"
+                  onClick={() => setOpen(false)}
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
               </div>
-            ) : (
-              <ul className="space-y-1">
-                {directories.map((directory) => (
-                  <li key={directory.path}>
+            </div>
+            
+            {/* Navigation */}
+            <div className="flex-grow overflow-y-auto p-4 space-y-6">
+              {/* Video Directories */}
+              <div className="animate-slide-up">
+                <div className="flex items-center justify-between mb-3 px-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Video Libraries
+                  </h2>
+                  <button
+                    onClick={handleAddDirectory}
+                    className="btn btn-icon btn-ghost text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                    aria-label="Add Directory"
+                  >
+                    <FolderPlusIcon className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {directories.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-dark-800 flex items-center justify-center">
+                      <FolderIcon className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No directories yet</p>
                     <button
-                      className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        selectedDirectory === directory.path
-                          ? 'text-white bg-blue-600'
-                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                      onClick={() => setSelectedDirectory(directory.path)}
+                      onClick={handleAddDirectory}
+                      className="btn btn-sm btn-primary"
                     >
-                      <FolderIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-                      <span className="truncate">{directory.name}</span>
+                      Add Directory
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Photo directories section */}
-          <div className="flex justify-between items-center px-4 mt-6 mb-2">
-            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-              PHOTO DIRS
-            </h2>
-            <button
-              onClick={handleAddPhotoDirectory}
-              className="p-1 text-blue-500 hover:text-blue-600 focus:outline-none"
-              aria-label="Add Photo Directory"
-            >
-              <FolderPlusIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="px-2">
-            {photoDirs.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-center text-gray-500">
-                No photo directories.<br />
-                Click + to add.
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {directories.map((directory, index) => (
+                      <li key={directory.path} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                        <button
+                          className={`nav-item group ${
+                            selectedDirectory === directory.path
+                              ? 'nav-item-active'
+                              : 'nav-item-inactive'
+                          }`}
+                          onClick={() => setSelectedDirectory(directory.path)}
+                        >
+                          <FolderIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                          <span className="truncate flex-1 text-left">{directory.name}</span>
+                          {selectedDirectory === directory.path && (
+                            <SparklesIcon className="w-4 h-4 ml-2 animate-pulse" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            ) : (
-              <ul className="space-y-1">
-                {photoDirs.map((directory) => (
-                  <li key={directory.path}>
+
+              {/* Photo Directories */}
+              <div className="animate-slide-up animation-delay-100">
+                <div className="flex items-center justify-between mb-3 px-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Photo Libraries
+                  </h2>
+                  <button
+                    onClick={handleAddPhotoDirectory}
+                    className="btn btn-icon btn-ghost text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                    aria-label="Add Photo Directory"
+                  >
+                    <FolderPlusIcon className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {photoDirs.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-dark-800 flex items-center justify-center">
+                      <PhotoIcon className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No photo dirs</p>
                     <button
-                      className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        selectedPhotoDir === directory.path
-                          ? 'text-white bg-blue-600'
-                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                      onClick={() => {
-                        setSelectedPhotoDir(directory.path);
-                        navigate('/photos');
-                      }}
+                      onClick={handleAddPhotoDirectory}
+                      className="btn btn-sm btn-accent"
                     >
-                      <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-                      <span className="truncate">{directory.name}</span>
+                      Add Photos
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {photoDirs.map((directory, index) => (
+                      <li key={directory.path} className="animate-slide-up" style={{ animationDelay: `${(directories.length + index) * 50}ms` }}>
+                        <button
+                          className={`nav-item group ${
+                            selectedPhotoDir === directory.path && location.pathname === '/photos'
+                              ? 'nav-item-active'
+                              : 'nav-item-inactive'
+                          }`}
+                          onClick={() => {
+                            setSelectedPhotoDir(directory.path);
+                            navigate('/photos');
+                          }}
+                        >
+                          <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                          <span className="truncate flex-1 text-left">{directory.name}</span>
+                          {selectedPhotoDir === directory.path && location.pathname === '/photos' && (
+                            <SparklesIcon className="w-4 h-4 ml-2 animate-pulse" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            
+            {/* Bottom Navigation */}
+            <div className="p-4 border-t border-gray-200/50 dark:border-dark-700/50 space-y-1">
+              <Link
+                to="/scripts"
+                className={`nav-item group ${
+                  location.pathname === '/scripts'
+                    ? 'nav-item-active'
+                    : 'nav-item-inactive'
+                }`}
+              >
+                <DocumentTextIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span>Scripts</span>
+              </Link>
+
+              <Link
+                to="/photos"
+                className={`nav-item group ${
+                  location.pathname === '/photos'
+                    ? 'nav-item-active'
+                    : 'nav-item-inactive'
+                }`}
+              >
+                <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span>Photo Gallery</span>
+              </Link>
+
+              <Link
+                to="/settings"
+                className={`nav-item group ${
+                  location.pathname === '/settings'
+                    ? 'nav-item-active'
+                    : 'nav-item-inactive'
+                }`}
+              >
+                <Cog6ToothIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span>Settings</span>
+              </Link>
+            </div>
           </div>
         </div>
-        
-        <div className="px-4 mt-6 space-y-2">
-          <Link
-            to="/scripts"
-            className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
-              location.pathname === '/scripts'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <DocumentTextIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>Scripts</span>
-          </Link>
-
-          <Link
-            to="/settings"
-            className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
-              location.pathname === '/settings'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Cog6ToothIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>Settings</span>
-          </Link>
-
-          <Link
-            to="/photos"
-            className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md ${
-              location.pathname === '/photos'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <PhotoIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>Photos</span>
-          </Link>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 

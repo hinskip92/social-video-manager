@@ -29,4 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /* Crop analysis */
   analyzeCrop: (videoPath) => ipcRenderer.invoke('export:analyzeCrop', videoPath),
+
+  /* Video Chat */
+  chatWithVideo: (options) => ipcRenderer.invoke('video-chat', options),
 });

@@ -2,3 +2,5 @@ ultralytics
 opencv-python
 scenedetect
 tqdm
+google-generativeai
+python-dotenv

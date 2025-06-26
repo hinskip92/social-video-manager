@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import type { Video } from "../contexts/DirectoryContext";
 import { useDirectories } from '../contexts/DirectoryContext';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import ExportModal from '../components/ExportModal';
+import VideoChatModal from '../components/VideoChatModal';
 
 const VideoPlayer = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ const VideoPlayer = () => {
   const [category, setCategory] = useState('');
 const [tagsInput, setTagsInput] = useState('');
 const [showExport, setShowExport] = useState(false);
+const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -240,8 +242,22 @@ const [showExport, setShowExport] = useState(false);
             >
               Edit Video
             </Link>
+<button
+              onClick={() => setIsChatOpen(true)}
+              className="ml-2 px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700 flex items-center"
+            >
+              <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2" />
+              Chat with Video
+            </button>
 {showExport && (
   <ExportModal videoPath={video.path} onClose={() => setShowExport(false)} />
+)}
+{isChatOpen && (
+  <VideoChatModal
+    isOpen={isChatOpen}
+    onClose={() => setIsChatOpen(false)}
+    videoPath={video.path}
+  />
 )}
           </div>
         </div>

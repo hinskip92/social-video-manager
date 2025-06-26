@@ -67,6 +67,9 @@ interface ElectronAPI {
   shellOpen: (filePath: string) => void;
 
   analyzeCrop: (videoPath: string) => Promise<CropRect | null>;
+
+  /* Video Chat */
+  chatWithVideo: (options: { videoPath: string; question: string }) => Promise<string>;
 }
 
 interface ExportProgress {

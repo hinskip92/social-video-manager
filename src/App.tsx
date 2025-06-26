@@ -35,23 +35,25 @@ function App() {
     <PhotoProvider>
     <DirectoryProvider>
       <Router>
-        <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+        <div className="flex h-screen overflow-hidden">
           {/* Sidebar */}
           <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
           
           {/* Main content */}
-          <div className={`flex flex-col flex-1 overflow-hidden ${sidebarOpen ? 'md:ml-64' : ''}`}>
+          <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${sidebarOpen ? 'md:ml-72' : ''}`}>
             <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             
-            <main className="flex-1 overflow-y-auto p-5">
-              <Routes>
-                <Route path="/" element={<VideoLibrary />} />
-                <Route path="/video/:id" element={<VideoPlayer />} />
-                <Route path="/video/:id/edit" element={<VideoEditor />} />
-                <Route path="/photos" element={<PhotoLibrary />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/scripts" element={<ScriptViewer />} />
-              </Routes>
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+              <div className="max-w-7xl mx-auto animate-fade-in">
+                <Routes>
+                  <Route path="/" element={<VideoLibrary />} />
+                  <Route path="/video/:id" element={<VideoPlayer />} />
+                  <Route path="/video/:id/edit" element={<VideoEditor />} />
+                  <Route path="/photos" element={<PhotoLibrary />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/scripts" element={<ScriptViewer />} />
+                </Routes>
+              </div>
             </main>
           </div>
         </div>
